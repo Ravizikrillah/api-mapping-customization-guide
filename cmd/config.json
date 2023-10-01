@@ -1,0 +1,57 @@
+{
+  "pluginConfigs": [
+    {
+      "name": "GenerateTransactionIDPlugin",
+      "path": "plugins/generate_transaction_id_plugin.so",
+      "instanceName": "GenerateTransactionIDPluginInstance"
+    },
+    {
+      "name": "SimSwapPlugin",
+      "path": "plugins/sim_swap_plugin.so",
+      "instanceName": "SimSwapPluginInstance"
+    }
+  ],
+  "apiMappings": [
+    {
+      "name": "ExampleRequestMapping",
+      "source": {
+        "url": "/example/request",
+        "method": "POST"
+      },
+      "target": {
+        "url": "http://localhost:8083/example/target",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+        }
+      },
+      "requestMapping": {
+        "queryParam": {
+          "query1": "src:query|partner_name",
+          "query2": "src:func|generateTransactionId()",
+          "query3": "src:static|123",
+          "query4": "src:req_body|query4"
+        },
+        "requestBody": {
+          "phoneNumber": "src:req_body|newPhoneNumber",
+          "maxAge": "src:req_body|age",
+          "countryCode": "src:req_body|location",
+          "categoryCode": "src:req_body|productCodes.1"
+        }
+      },
+      "responseMapping": {
+        "200": {
+          "sim_swap": "src:func|SimSwapPlugin.Execute(src:req_body|age,src:res_body|data.score)",
+          "transaction_id": "src:func|GenerateTransactionIDPlugin.Execute()",
+          "score": "src:res_body|data.score",
+          "age": "src:req_body|age"
+        },
+        "400": {
+          "status": "src:static|error",
+          "message": "src:res_body|errorMessage",
+          "data": "src:res_body|errorData"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+	"info": {
+		"_postman_id": "1be8ec85-b04c-442d-b601-27a84c5303c4",
+		"name": "Custom API Mapping Guide",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "2441648"
+	},
+	"item": [
+		{
+			"name": "Example Request",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "YOUR_AUTH_TOKEN"
+					},
+					{
+						"key": "X-Mnt-Y",
+						"value": "YOUR_PARTNER_ID"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"newPhoneNumber\": \"+1234567890\",\n    \"age\": 30,\n    \"location\": \"New York\",\n    \"productCodes\": [\n        \"PROD001\",\n        \"PROD002\"\n    ],\n    \"details\": {\n        \"description\": \"This is a detailed description.\",\n        \"enabled\": true\n    },\n    \"items\": [\n        {\n            \"name\": \"Item 1\",\n            \"quantity\": 2\n        },\n        {\n            \"name\": \"Item 2\",\n            \"quantity\": 3\n        }\n    ]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/example/request?query1=Digihub&query2=generated_transaction_id_here&query3=123&query4=YESS",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"example",
+						"request"
+					],
+					"query": [
+						{
+							"key": "query1",
+							"value": "Digihub"
+						},
+						{
+							"key": "query2",
+							"value": "generated_transaction_id_here"
+						},
+						{
+							"key": "query3",
+							"value": "123"
+						},
+						{
+							"key": "query4",
+							"value": "YESS"
+						}
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Example Request",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "YOUR_AUTH_TOKEN"
+							},
+							{
+								"key": "X-Mnt-Y",
+								"value": "YOUR_PARTNER_ID"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"newPhoneNumber\": \"+1234567890\",\n    \"age\": 30,\n    \"location\": \"New York\",\n    \"productCodes\": [\n        \"PROD001\",\n        \"PROD002\"\n    ],\n    \"details\": {\n        \"description\": \"This is a detailed description.\",\n        \"enabled\": true\n    },\n    \"items\": [\n        {\n            \"name\": \"Item 1\",\n            \"quantity\": 2\n        },\n        {\n            \"name\": \"Item 2\",\n            \"quantity\": 3\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8082/example/request?query1=Digihub&query2=generated_transaction_id_here&query3=123&query4=YESS",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
+							"path": [
+								"example",
+								"request"
+							],
+							"query": [
+								{
+									"key": "query1",
+									"value": "Digihub"
+								},
+								{
+									"key": "query2",
+									"value": "generated_transaction_id_here"
+								},
+								{
+									"key": "query3",
+									"value": "123"
+								},
+								{
+									"key": "query4",
+									"value": "YESS"
+								}
+							]
+						}
+					},
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"name": "Content-Type",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"age\": 24,\n    \"score\": 2,\n    \"sim_swap\": true,\n    \"transaction_id\": \"2e67a31c-c844-4c37-8097-4b7eba36ef58\"\n}"
+				}
+			]
+		}
+	]
+}
