@@ -1,18 +1,27 @@
 package main
 
+import (
+	"strconv"
+)
+
 // SimSwapPlugin is a plugin for checking SIM swap.
 type SimSwapPlugin struct{}
 
 // Execute checks SIM swap with the arguments maxAge and score.
 func (p SimSwapPlugin) Execute(args ...interface{}) interface{} {
 	if len(args) != 2 {
-		return "leng kurang"
+		return "maxAge or score not provided"
 	}
 
-	maxAge, ok1 := args[0].(float64)
-	score, ok2 := args[1].(float64)
+	maxAge, maxAgeOK := args[0].(float64)
+	scoreStr, scoreStrOK := args[1].(string)
 
-	if !ok1 || !ok2 {
+	score, err := strconv.ParseFloat(scoreStr, 64)
+	if err != nil {
+		return "Invalid score format"
+	}
+
+	if !maxAgeOK || !scoreStrOK {
 		return "Error"
 	}
 

@@ -183,7 +183,8 @@ func performTargetRequest(target APITarget, reqBodyJSON []byte) (int, error) {
 	fmt.Println("RESPONSE CODE:", code)
 
 	// Read the response body.
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	fmt.Println("RESPONSE BODY:", string(body))
 	if err != nil {
 		return 0, err
 	}

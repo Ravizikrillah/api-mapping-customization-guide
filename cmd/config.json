@@ -52,6 +52,76 @@
           "data": "src:res_body|errorData"
         }
       }
+    },
+    {
+      "name": "CAMARA SIM Swap Check",
+      "source": {
+        "url": "/sim-swap/v0/check",
+        "method": "POST"
+      },
+      "target": {
+        "url": "http://localhost:8081/digihub/subscheck/simswapv2",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+        }
+      },
+      "requestMapping": {
+        "queryParam": {},
+        "requestBody": {
+          "transaction_id": "src:func|GenerateTransactionIDPlugin.Execute()",
+          "consent_id": "src:static|Digihub",
+          "msisdn": "src:req_body|phoneNumber",
+          "parameter": {
+            "partner_name": "src:static|Digihub Livetest"
+          }
+        }
+      },
+      "responseMapping": {
+        "200": {
+          "swapped": "src:func|SimSwapPlugin.Execute(src:req_body|maxAge,src:res_body|score)"
+        },
+        "400": {
+          "status": "src:static|400",
+          "code": "src:static|INVALID_ARGUMENT",
+          "message": "src:static|Client specified an invalid argument, request body or query param"
+        },
+        "401": {
+          "status": "src:static|401",
+          "code": "src:static|UNAUTHENTICATED",
+          "message": "src:static|Request not authenticated due to missing, invalid, or expired credentials"
+        },
+        "403": {
+          "status": "src:static|403",
+          "code": "src:static|PERMISSION_DENIED",
+          "message": "src:static|Client does not have sufficient permissions to perform this action"
+        },
+        "404": {
+          "status": "src:static|404",
+          "code": "src:static|SIM_SWAP.UNKNOWN_PHONE_NUMBER",
+          "message": "src:static|SIM Swap can't be checked because the phone number is unknown."
+        },
+        "409": {
+          "status": "src:static|409",
+          "code": "src:static|CONFLICT",
+          "message": "src:static|Another request is created for the same MSISDN"
+        },
+        "500": {
+          "status": "src:static|500",
+          "code": "src:static|INTERNAL",
+          "message": "src:static|Server error"
+        },
+        "503": {
+          "status": "src:static|503",
+          "code": "src:static|UNAVAILABLE",
+          "message": "src:static|Service unavailable"
+        },
+        "504": {
+          "status": "src:static|504",
+          "code": "src:static|TIMEOUT",
+          "message": "src:static|Request timeout exceeded. Try later"
+        }
+      }
     }
   ]
 }
