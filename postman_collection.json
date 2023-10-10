@@ -59,81 +59,83 @@
 					]
 				}
 			},
-			"response": [
-				{
-					"name": "Example Request",
-					"originalRequest": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "YOUR_AUTH_TOKEN"
-							},
-							{
-								"key": "X-Mnt-Y",
-								"value": "YOUR_PARTNER_ID"
-							},
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"newPhoneNumber\": \"+1234567890\",\n    \"age\": 30,\n    \"location\": \"New York\",\n    \"productCodes\": [\n        \"PROD001\",\n        \"PROD002\"\n    ],\n    \"details\": {\n        \"description\": \"This is a detailed description.\",\n        \"enabled\": true\n    },\n    \"items\": [\n        {\n            \"name\": \"Item 1\",\n            \"quantity\": 2\n        },\n        {\n            \"name\": \"Item 2\",\n            \"quantity\": 3\n        }\n    ]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:8082/example/request?query1=Digihub&query2=generated_transaction_id_here&query3=123&query4=YESS",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8082",
-							"path": [
-								"example",
-								"request"
-							],
-							"query": [
-								{
-									"key": "query1",
-									"value": "Digihub"
-								},
-								{
-									"key": "query2",
-									"value": "generated_transaction_id_here"
-								},
-								{
-									"key": "query3",
-									"value": "123"
-								},
-								{
-									"key": "query4",
-									"value": "YESS"
-								}
-							]
-						}
+			"response": []
+		},
+		{
+			"name": "CAMARA - SIM Swap Check",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "YOUR_AUTH_TOKEN"
 					},
-					"_postman_previewlanguage": "json",
-					"header": [
-						{
-							"key": "Content-Type",
-							"value": "application/json",
-							"name": "Content-Type",
-							"description": "",
-							"type": "text"
-						}
+					{
+						"key": "X-Mnt-Y",
+						"value": "YOUR_PARTNER_ID"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"phoneNumber\": \"+62811649119\",\n  \"maxAge\": 240\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8082/sim-swap/v0/check",
+					"protocol": "http",
+					"host": [
+						"localhost"
 					],
-					"cookie": [],
-					"body": "{\n    \"age\": 24,\n    \"score\": 2,\n    \"sim_swap\": true,\n    \"transaction_id\": \"2e67a31c-c844-4c37-8097-4b7eba36ef58\"\n}"
+					"port": "8082",
+					"path": [
+						"sim-swap",
+						"v0",
+						"check"
+					]
 				}
-			]
+			},
+			"response": []
+		},
+		{
+			"name": "Target - ESB : Get SIM Swap",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "YOUR_AUTH_TOKEN"
+					},
+					{
+						"key": "X-Mnt-Y",
+						"value": "YOUR_PARTNER_ID"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"transaction_id\": \"C002190926121907251348414\",\n    \"consent_id\": \"Digihub\",\n    \"msisdn\": \"+62811649119\",\n    \"parameter\": {\n        \"partner_name\": \"Digihub Livetest\"\n    }\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8081/digihub/subscheck/simswapv2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"digihub",
+						"subscheck",
+						"simswapv2"
+					]
+				}
+			},
+			"response": []
 		}
 	]
 }
