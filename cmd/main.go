@@ -1,6 +1,7 @@
 package main
 
 import (
+	conf "api-mapping-customization-guide/cmd/config"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,60 +16,37 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// APITarget represents the target API configuration.
-type APITarget struct {
-	URL     string                 `json:"url"`
-	Method  string                 `json:"method"`
-	Headers map[string]interface{} `json:"headers"`
-}
-
-// APIEndpoint represents an API mapping configuration.
-type APIEndpoint struct {
-	Name            string                 `json:"name"`
-	Source          APITarget              `json:"source"`
-	Target          APITarget              `json:"target"`
-	RequestMapping  map[string]interface{} `json:"requestMapping"`
-	ResponseMapping map[string]interface{} `json:"responseMapping"`
-}
-
-// Configuration represents the entire JSON configuration.
-type Configuration struct {
-	APIMappings   []APIEndpoint  `json:"apiMappings"`
-	PluginConfigs []PluginConfig `json:"pluginConfigs"`
-}
-
-type PluginConfig struct {
-	Name         string `json:"name"`
-	Path         string `json:"path"`
-	InstanceName string `json:"instanceName"`
-}
+// Define global variables
+var (
+	requestBodyJSON  gjson.Result
+	responseBodyJSON gjson.Result
+	config           conf.Configuration
+)
 
 // PluginInterface is the interface for custom plugin functions.
 type PluginInterface interface {
 	Execute(args ...interface{}) interface{}
 }
 
-var requestBodyJSON gjson.Result
-var responseBodyJSON gjson.Result
-var config Configuration
-
 // HandleAPIRequest handles incoming requests based on the API mapping configuration.
-func HandleAPIRequest(w http.ResponseWriter, r *http.Request, endpoint APIEndpoint) {
+func HandleAPIRequest(w http.ResponseWriter, r *http.Request, endpoint conf.APIEndpoint) {
 	fmt.Println("Received request for API:", endpoint.Name)
 
 	// Translate query parameters
-	for key, value := range endpoint.RequestMapping["queryParam"].(map[string]interface{}) {
-		if val, ok := value.(string); ok {
-			parts := strings.SplitN(val, "|", 2)
-			if len(parts) == 2 {
-				srcType := parts[0]
-				srcValue := parts[1]
+	if len(endpoint.RequestMapping.QueryParam) > 0 {
+		for key, value := range endpoint.RequestMapping.QueryParam {
+			if val, ok := value.(string); ok {
+				parts := strings.SplitN(val, "|", 2)
+				if len(parts) == 2 {
+					srcType := parts[0]
+					srcValue := parts[1]
 
-				switch srcType {
-				case "src:query":
-					r.URL.Query().Set(key, r.URL.Query().Get(srcValue))
-				case "src:static":
-					r.URL.Query().Set(key, srcValue)
+					switch srcType {
+					case "src:query":
+						r.URL.Query().Set(key, r.URL.Query().Get(srcValue))
+					case "src:static":
+						r.URL.Query().Set(key, srcValue)
+					}
 				}
 			}
 		}
@@ -83,7 +61,7 @@ func HandleAPIRequest(w http.ResponseWriter, r *http.Request, endpoint APIEndpoi
 	requestBodyJSON = gjson.Parse(string(rBody))
 
 	// Convert request body to JSON
-	reqBody := mapData(endpoint.RequestMapping["requestBody"], r, r.Header)
+	reqBody := mapData(endpoint.RequestMapping.RequestBody, r, r.Header)
 	requestBody, err := json.Marshal(reqBody)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -96,54 +74,78 @@ func HandleAPIRequest(w http.ResponseWriter, r *http.Request, endpoint APIEndpoi
 		return
 	}
 
-	// Mapping the response based on HTTP status code.
-	var responseMappingKey string
+	// Extract the response key from the configuration
+	mappingType := endpoint.ResponseMappingType
+	var (
+		//Initialize an empty response map.
+		response     interface{}
+		httpResponse int
+	)
 
-	switch code {
-	case 200:
-		responseMappingKey = "200"
-	case 400:
-		responseMappingKey = "400"
-	case 401:
-		responseMappingKey = "401"
-	case 403:
-		responseMappingKey = "403"
-	case 404:
-		responseMappingKey = "404"
-	case 409:
-		responseMappingKey = "409"
-	case 500:
-		responseMappingKey = "500"
-	case 503:
-		responseMappingKey = "503"
-	case 504:
-		responseMappingKey = "504"
-	default:
-		// Handle any other status codes if needed.
-		http.Error(w, "Unsupported status code", http.StatusNotImplemented)
-		return
+	if mappingType == "byHTTPStatusCode" {
+		// Handle response mapping by HTTP status code
+		responseKey := fmt.Sprint(code)
+		if endpoint.ResponseMapping.ByHTTPStatusCode.Custom[responseKey] == nil {
+			fmt.Println("Response Not Mapping Yet")
+			defaultRes := endpoint.ResponseMapping.ByHTTPStatusCode.Default.Response
+			response = mapData(defaultRes.JSONBody, r, r.Header)
+			httpResponse = defaultRes.HTTPStatusCode
+		} else {
+			savedJSONBody := endpoint.ResponseMapping.ByHTTPStatusCode.Custom[responseKey].(map[string]interface{})
+			response = mapData(savedJSONBody, r, r.Header)
+			httpResponse = code
+		}
+	} else if mappingType == "byBodyResponse" {
+		// Handle response mapping by body response
+		for key := range endpoint.ResponseMapping.ByBodyResponse.Custom {
+			responseValue := responseBodyJSON.Get(key).String()
+			responseMapping := endpoint.ResponseMapping
+
+			// Define a function to process the response based on a key
+			processResponse := func(key string) {
+				if entries, ok := responseMapping.ByBodyResponse.Custom[key]; ok {
+					for _, entry := range entries {
+						for _, value := range entry.Values {
+							if value == responseValue {
+								response = mapData(entry.Response.JSONBody, r, r.Header)
+								httpResponse = entry.Response.HTTPStatusCode
+							}
+						}
+					}
+				}
+			}
+
+			// Iterate through dynamic keys within ByBodyResponse
+			for key := range responseMapping.ByBodyResponse.Custom {
+				processResponse(key)
+			}
+
+			if httpResponse == 0 {
+				fmt.Println("Response Not Mapping Yet")
+				defaultResponse := responseMapping.ByBodyResponse.Default.Response
+				response = mapData(defaultResponse.JSONBody, r, r.Header)
+				httpResponse = defaultResponse.HTTPStatusCode
+			}
+		}
 	}
 
-	// Get the response mapping for the matched status code.
-	responseMapping := endpoint.ResponseMapping[responseMappingKey]
-
-	// Initialize an empty response map.
-	response := mapData(responseMapping, r, r.Header)
-
-	// Convert response to JSON and send it.
+	//Convert response to JSON and send it.
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	fmt.Println("RESPONSE CODE TO REQUESTER: ", httpResponse)
+	fmt.Println("RESPONSE BODY TO REQUESTER: ", string(jsonResponse))
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(httpResponse)
 	_, _ = w.Write(jsonResponse)
 }
 
 // performTargetRequest performs the HTTP request to the target API.
-func performTargetRequest(target APITarget, reqBodyJSON []byte) (int, error) {
+func performTargetRequest(target conf.APITarget, reqBodyJSON []byte) (int, error) {
 	// Create an HTTP client.
 	client := &http.Client{}
 
@@ -161,12 +163,11 @@ func performTargetRequest(target APITarget, reqBodyJSON []byte) (int, error) {
 		}
 	}
 
-	fmt.Println("Request:")
+	fmt.Println("REQUEST TO TARGET:")
 	dump, err := httputil.DumpRequest(req, true)
 	if err != nil {
 		fmt.Println("Error dumping request:", err)
 	}
-
 	fmt.Println(string(dump))
 
 	// Perform the HTTP request.
@@ -179,12 +180,12 @@ func performTargetRequest(target APITarget, reqBodyJSON []byte) (int, error) {
 	}(resp.Body)
 
 	code := resp.StatusCode
-
-	fmt.Println("RESPONSE CODE:", code)
+	fmt.Println("")
+	fmt.Println("RESPONSE CODE TARGET:", code)
 
 	// Read the response body.
 	body, err := io.ReadAll(resp.Body)
-	fmt.Println("RESPONSE BODY:", string(body))
+	fmt.Println("RESPONSE BODY TARGET:", string(body))
 	if err != nil {
 		return 0, err
 	}
@@ -196,6 +197,7 @@ func performTargetRequest(target APITarget, reqBodyJSON []byte) (int, error) {
 	return code, nil
 }
 
+// mapData maps data based on a data mapping configuration.
 func mapData(dataMapping interface{}, r *http.Request, header http.Header) interface{} {
 	switch mapping := dataMapping.(type) {
 	case string:
@@ -236,6 +238,7 @@ func mapData(dataMapping interface{}, r *http.Request, header http.Header) inter
 	}
 }
 
+// handleStringDataMapping handles string-based data mapping.
 func handleStringDataMapping(val string, r *http.Request, header http.Header) interface{} {
 	parts := strings.SplitN(val, "|", 2)
 	if len(parts) != 2 {
@@ -336,6 +339,7 @@ func handleStringDataMapping(val string, r *http.Request, header http.Header) in
 	return nil
 }
 
+// getKeyValueReq retrieves a key from the request body.
 func getKeyValueReq(key string) interface{} {
 	result := requestBodyJSON.Get(key)
 	if !result.Exists() {
@@ -344,6 +348,7 @@ func getKeyValueReq(key string) interface{} {
 	return result.Value()
 }
 
+// getValueKeyRes retrieves a key from the response body.
 func getValueKeyRes(key string) interface{} {
 	result := responseBodyJSON.Get(key)
 	if result.Exists() {
@@ -352,64 +357,9 @@ func getValueKeyRes(key string) interface{} {
 	return nil
 }
 
-func main() {
-	// Open and read the JSON configuration file.
-	configFile, err := os.Open("config.json")
-	if err != nil {
-		fmt.Println("Failed to open config.json:", err)
-		return
-	}
-	defer configFile.Close()
-
-	// Read the contents of the file.
-	configData, err := io.ReadAll(configFile)
-	if err != nil {
-		fmt.Println("Failed to read config.json:", err)
-		return
-	}
-
-	// Parse the JSON configuration.
-	err = json.Unmarshal(configData, &config)
-	if err != nil {
-		fmt.Println("Failed to parse config.json:", err)
-		return
-	}
-
-	// Start the HTTP server on port 8082.
-	fmt.Println("Listening on :8082...")
-	http.ListenAndServe(":8082", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Determine which API endpoint to use based on the request path or other criteria.
-		var matchedEndpoint APIEndpoint
-
-		// Iterate through all API mappings to find the appropriate endpoint.
-		for _, endpoint := range config.APIMappings {
-			if r.URL.Path == endpoint.Source.URL && r.Method == endpoint.Source.Method {
-				matchedEndpoint = endpoint
-				break
-			}
-		}
-
-		// If no matching endpoint is found, return a 404 error.
-		if matchedEndpoint.Name == "" {
-			http.Error(w, "No matching API endpoint found", http.StatusNotFound)
-			return
-		}
-
-		//body, err := ioutil.ReadAll(r.Body)
-		//if err != nil {
-		//	http.Error(w, "Error reading request body", http.StatusBadRequest)
-		//	return
-		//}
-		//
-		//fmt.Println("DEBUG1", string(body))
-
-		// Handle the API request using the matched endpoint.
-		HandleAPIRequest(w, r, matchedEndpoint)
-	}))
-}
-
+// callCustomFunction calls a custom function from a loaded plugin.
 func callCustomFunction(pluginName string, args ...interface{}) interface{} {
-	var matchedPlugin PluginConfig
+	var matchedPlugin conf.PluginConfig
 	for _, p := range config.PluginConfigs {
 		if pluginName == p.Name {
 			matchedPlugin = p
@@ -445,4 +395,52 @@ func callCustomFunction(pluginName string, args ...interface{}) interface{} {
 	// Call the Execute method and get the result
 	result := pluginInstance.Execute(args...)
 	return result
+}
+
+func main() {
+	// Open and read the JSON configuration file.
+	configFile, err := os.Open("config/config.json")
+	if err != nil {
+		fmt.Println("Failed to open config.json:", err)
+		return
+	}
+	defer configFile.Close()
+
+	// Read the contents of the file.
+	configData, err := io.ReadAll(configFile)
+	if err != nil {
+		fmt.Println("Failed to read config.json:", err)
+		return
+	}
+
+	// Parse the JSON configuration.
+	err = json.Unmarshal(configData, &config)
+	if err != nil {
+		fmt.Println("Failed to parse config.json:", err)
+		return
+	}
+
+	// Start the HTTP server on port 8082.
+	fmt.Println("Listening on :8082...")
+	http.ListenAndServe(":8083", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Determine which API endpoint to use based on the request path or other criteria.
+		var matchedEndpoint conf.APIEndpoint
+
+		// Iterate through all API mappings to find the appropriate endpoint.
+		for _, endpoint := range config.APIMappings {
+			if r.URL.Path == endpoint.Source.URL && r.Method == endpoint.Source.Method {
+				matchedEndpoint = endpoint
+				break
+			}
+		}
+
+		// If no matching endpoint is found, return a 404 error.
+		if matchedEndpoint.Name == "" {
+			http.Error(w, "No matching API endpoint found", http.StatusNotFound)
+			return
+		}
+
+		// Handle the API request using the matched endpoint.
+		HandleAPIRequest(w, r, matchedEndpoint)
+	}))
 }

@@ -80,23 +80,23 @@ func handleSimSwapRequest(w http.ResponseWriter, r *http.Request) {
 	// Generate a random score between 1 and 4
 	rand.Seed(time.Now().UnixNano())
 
-	response := SimSwapResponse{
-		TransactionID: request["transaction_id"].(string), // Assuming "TransactionID" is a string key
-		StatusCode:    "00000",
-		StatusDesc:    "Success",
-		Score:         fmt.Sprintf("%d", rand.Intn(4)+1),
-	}
-
-	w.WriteHeader(http.StatusOK)
-
 	//response := SimSwapResponse{
-	//	//TransactionID: request["transaction_id"].(string), // Assuming "TransactionID" is a string key
-	//	StatusCode: "20005",
-	//	StatusDesc: "Inactive MSISDN / MSISDN Not Found",
-	//	//Score:         fmt.Sprintf("%d", randomScore),
+	//	TransactionID: request["transaction_id"].(string), // Assuming "TransactionID" is a string key
+	//	StatusCode:    "00000",
+	//	StatusDesc:    "Success",
+	//	Score:         fmt.Sprintf("%d", rand.Intn(4)+1),
 	//}
 	//
-	//w.WriteHeader(http.StatusBadRequest)
+	//w.WriteHeader(http.StatusOK)
+
+	response := SimSwapResponse{
+		//TransactionID: request["transaction_id"].(string), // Assuming "TransactionID" is a string key
+		StatusCode: "20005",
+		StatusDesc: "Inactive MSISDN / MSISDN Not Found",
+		//Score:         fmt.Sprintf("%d", randomScore),
+	}
+
+	w.WriteHeader(http.StatusBadRequest)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
