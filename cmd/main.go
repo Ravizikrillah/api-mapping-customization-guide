@@ -68,7 +68,7 @@ func HandleAPIRequest(w http.ResponseWriter, r *http.Request, endpoint conf.APIE
 		return
 	}
 
-	code, err := performTargetRequest(endpoint.Target, requestBody)
+	code, err := performTargetRequest(endpoint.Target, requestBody, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -145,22 +145,20 @@ func HandleAPIRequest(w http.ResponseWriter, r *http.Request, endpoint conf.APIE
 }
 
 // performTargetRequest performs the HTTP request to the target API.
-func performTargetRequest(target conf.APITarget, reqBodyJSON []byte) (int, error) {
+func performTargetRequest(target conf.APITarget, reqBodyJSON []byte, r *http.Request) (int, error) {
 	// Create an HTTP client.
 	client := &http.Client{}
 
-	// Prepare the request based on the target config.uration.
+	// Prepare the request based on the target configuration.
 	req, err := http.NewRequest(target.Method, target.URL, strings.NewReader(string(reqBodyJSON)))
 	if err != nil {
 		return 0, err
 	}
 
 	// Copy headers from the target configuration to the request.
-	for key, value := range target.Headers {
-		switch val := value.(type) {
-		case string:
-			req.Header.Set(key, val)
-		}
+	for key, v := range target.Headers {
+		val := fmt.Sprint(mapData(v, r, r.Header))
+		req.Header.Set(key, val)
 	}
 
 	fmt.Println("REQUEST TO TARGET:")

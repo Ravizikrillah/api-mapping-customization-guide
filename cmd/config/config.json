@@ -23,7 +23,8 @@
         "url": "http://localhost:8081/digihub/subscheck/simswapv2",
         "method": "POST",
         "headers": {
-          "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+          "api_key": "src:static|YOUR_API_KEY",
+          "x-signature": "src:func|GenerateSignaturePlugin.Execute()"
         }
       },
       "requestMapping": {
