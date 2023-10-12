@@ -54,8 +54,8 @@ type Default struct {
 
 // BodyResponse defines the structure for response mapping.
 type BodyResponse struct {
-	Values   []string `json:"values"`
-	Response Response `json:"response"`
+	Values   []interface{} `json:"values"`
+	Response Response      `json:"response"`
 }
 
 // Response defines the structure for response mapping.

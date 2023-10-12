@@ -98,7 +98,7 @@ func HandleAPIRequest(w http.ResponseWriter, r *http.Request, endpoint conf.APIE
 	} else if mappingType == "byBodyResponse" {
 		// Handle response mapping by body response
 		for key := range endpoint.ResponseMapping.ByBodyResponse.Custom {
-			responseValue := responseBodyJSON.Get(key).String()
+			responseValue := responseBodyJSON.Get(key).Value()
 			responseMapping := endpoint.ResponseMapping
 
 			// Define a function to process the response based on a key
@@ -420,7 +420,7 @@ func main() {
 
 	// Start the HTTP server on port 8082.
 	fmt.Println("Listening on :8082...")
-	http.ListenAndServe(":8083", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	http.ListenAndServe(":8082", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Determine which API endpoint to use based on the request path or other criteria.
 		var matchedEndpoint conf.APIEndpoint
 

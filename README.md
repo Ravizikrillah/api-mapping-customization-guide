@@ -245,6 +245,121 @@ Example:
 ```
 
 ## 4. Response Mapping Examples
+### Response Mapping Types
+
+In the new structure, you can specify two types of response mapping: `byBodyResponse` and `byHTTPStatusCode`. Additionally, you can define default and custom response mappings for each type.
+
+#### Response Mapping Type: `byBodyResponse`
+
+This type of response mapping allows you to map fields in the response body to fields in the transformed response. You can define both default and custom mappings.
+
+##### Default Response Mapping for `byBodyResponse`
+
+Default mappings are used when no custom mappings match the response data.
+
+```json
+"responseMapping": {
+  "byBodyResponse": {
+    "default": {
+      "response": {
+        "http_status_code": 500,
+        "json_body": {
+          "status": "src:static|500",
+          "code": "src:static|INTERNAL",
+          "message": "src:static|Server error"
+        }
+      }
+    }
+  }
+}
+
+
+```
+
+In this example, if there's no matching custom mapping in the `byBodyResponse` type, a default response with an HTTP status code of 500 will be generated with the specified JSON body.
+
+##### Custom Response Mapping for `byBodyResponse`
+
+Custom mappings allow you to specify different response transformations based on specific conditions.
+
+```json
+"responseMapping": {
+  "byBodyResponse": {
+    "custom": {
+      "status_code": [
+        {
+          "values": [
+            "00000"
+          ],
+          "response": {
+            "http_status_code": 200,
+            "json_body": {
+              "swapped": "src:func|SimSwapPlugin.Execute(src:req_body|maxAge,src:res_body|score)"
+            }
+          }
+        },
+        // Additional custom mappings can be defined here
+      ]
+    }
+  }
+}
+
+```
+
+In this example, for a specific response condition where `values` match "00000," a custom response with an HTTP status code of 200 and a JSON body containing the specified transformations will be generated.
+
+`values` support for all type data boolean, string, int, and float
+
+#### Response Mapping Type: `byHTTPStatusCode`
+
+This type of response mapping allows you to map fields in the response body based on the HTTP status code of the response. Like `byBodyResponse`, you can define both default and custom mappings.
+
+##### Default Response Mapping for `byHTTPStatusCode`
+
+Default mappings are used when no custom mappings match the HTTP status code.
+
+```json
+"responseMapping": {
+  "byHTTPStatusCode": {
+    "default": {
+      "response": {
+        "http_status_code": 500,
+        "json_body": {
+          "status": "src:static|500",
+          "code": "src:static|INTERNAL",
+          "message": "src:static|Server error"
+        }
+      }
+    }
+  }
+}
+
+```
+
+In this example, if there's no matching custom mapping in the `byHTTPStatusCode` type, a default response with the specified HTTP status code and JSON body will be generated.
+
+##### Custom Response Mapping for `byHTTPStatusCode`
+
+Custom mappings allow you to specify different response transformations for specific HTTP status codes.
+
+```json
+"responseMapping": {
+  "byHTTPStatusCode": {
+    "custom": {
+      "200": {
+        "swapped": "src:func|SimSwapPlugin.Execute(src:req_body|maxAge,src:res_body|score)"
+      },
+      "400": {
+        "status": "src:static|400",
+        "code": "src:static|INVALID_ARGUMENT",
+        "message": "src:static|Client specified an invalid argument, request body or query param"
+      },
+      // Additional custom mappings can be defined here
+    }
+  }
+}
+
+```
 ### Response Mapping with Data Transformations
 
 #### Mapping a Nested Field in the Response Body to a Field:
